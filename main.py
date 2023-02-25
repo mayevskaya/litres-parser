@@ -2,27 +2,40 @@ from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
 import requests
 
-# Operating data, provider role. Body of application
-class Main:
-  pass
+# Collect data from litres
+def get():
 
-# Getting data, service role. Skeleton of application
-class Func:
+  ua = UserAgent(browsers=['chrome'])
+  header = {
+    "user-agent": ua.random,
+    "accept": "accept: application/json, text/plain, */*"
+  }
 
-  def get_data():
+  url = "https://litres.ru/"
 
-    ua = UserAgent(browsers=['chrome'])
-    header = {
-      "user-agent": ua.random,
-      "accept": "accept: application/json, text/plain, */*"
-    }
+  response = requests.get(url, header)
 
-    url = "https://litres.ru/"
+  # Create local file and save raw html into it
+  raw = open('litres.html', 'w')
+  raw.write(response.text)
 
-    response = requests.get(url, header)
+# Sort gotten information
+def sort():
 
-    # Create local file and save raw html into it
-    raw = open('litres.html', 'w')
-    raw.write(response.text)
-    
-Func.get_data()
+  raw = open('litres.html', 'r')
+  soup = BeautifulSoup(raw, 'lxml')
+  
+  # Get all the div-wrappers of links
+  books = soup.find_all('div', class_="Art-module__bookInfo_2CrYb")
+  # Then, get all the links
+  links = [link.find('a')['href'] for link in books]
+
+  # Fortunately, we can get names of books and its authors by classes
+  names = soup.find_all(class_="Art-module__name__row_2S_Yp")
+  authors = soup.find_all(class_="Art-module__author_1QaFB")
+
+# Extract information to MongoDB
+def extract():
+    pass
+
+find_data()
