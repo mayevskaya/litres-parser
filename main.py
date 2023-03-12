@@ -1,11 +1,12 @@
 from bs4 import BeautifulSoup
+from pymongo import MongoClient
 from fake_useragent import UserAgent
-import requests
+import requests, json, fake_proxy
 
-# Collect data from litres
+# Collect data from main page of Litres.ru
 def get():
 
-  ua = UserAgent(browsers=['chrome'])
+  ua = UserAgent(browsers=["edge", "chrome"])
   header = {
     "user-agent": ua.random,
     "accept": "accept: application/json, text/plain, */*"
@@ -13,11 +14,11 @@ def get():
 
   url = "https://litres.ru/"
 
-  response = requests.get(url, header)
+  response = requests.get(url, header, proxies=fake_proxy.get())
 
   # Create local file and save raw html into it
-  raw = open('litres.html', 'w')
-  raw.write(response.text)
+  open('litres.html', 'w').write(response.text)
+  
 
 # Sort gotten information
 def sort():
@@ -31,11 +32,19 @@ def sort():
   links = [link.find('a')['href'] for link in books]
 
   # Fortunately, we can get names of books and its authors by classes
-  names = soup.find_all(class_="Art-module__name__row_2S_Yp")
-  authors = soup.find_all(class_="Art-module__author_1QaFB")
+  names = [i.text for i in soup.find_all(class_="Art-module__name__row_2S_Yp")]
+  authors = [i.text for i in soup.find_all(class_="Art-module__author_1QaFB")]
 
-# Extract information to MongoDB
-def extract():
-    pass
+  return names, authors
 
-find_data()
+# Extract information to JSON
+def extract(names, authors):
+  data = [{"Name": names[i], "Author": authors[i]} for i in range(len(names)
+    )]
+  open('data.json', 'w').write(f'{json.dumps(data, ensure_ascii=False)}')
+
+if __name__ == '__main__':
+  get()
+  names, authors = sort()
+  extract(names, authors)
+  print("Succesfully! `data.json` and `litres.html` appeared in this directory.")
